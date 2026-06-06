@@ -434,7 +434,11 @@ html, body, #root {
   border-radius: 3px;
   width: 100%;
   height: 12px;
-  transition: opacity 0.1s;
+  transition: transform 0.08s ease;
+}
+
+.chart-cell:active {
+  transform: scale(0.65);
 }
 
 .chart-cell-sel {

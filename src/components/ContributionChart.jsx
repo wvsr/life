@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WEEKS = 16;
@@ -14,8 +14,7 @@ function buildGrid() {
   const today = new Date();
   today.setHours(12, 0, 0, 0);
   const todayStr = toStr(today);
-
-  const dow = (today.getDay() + 6) % 7; // Mon=0..Sun=6
+  const dow = (today.getDay() + 6) % 7;
   const start = new Date(today);
   start.setDate(today.getDate() - dow - (WEEKS - 1) * 7);
 
@@ -30,50 +29,37 @@ function buildGrid() {
     if (day === 7) { day = 0; week++; }
   }
 
-  return { cells, totalWeeks: week + (day > 0 ? 1 : 0) };
+  return { cells, totalWeeks: week + (day > 0 ? 1 : 0), todayStr };
 }
 
-function dayScore(dayData) {
-  if (!dayData) return -1;
-  const { office, satisfied, studied, pmo_count } = dayData;
-  const hasAny = [office, satisfied, studied].some(v => v !== null) || pmo_count !== null;
+function dayScore(d) {
+  if (!d) return -1;
+  const hasAny = [d.office, d.satisfied, d.studied].some(v => v !== null) || d.pmo_count !== null;
   if (!hasAny) return -1;
-  return (office === 1 ? 1 : 0) + (satisfied === 1 ? 1 : 0) + (studied === 1 ? 1 : 0);
+  return (d.office === 1 ? 1 : 0) + (d.satisfied === 1 ? 1 : 0) + (d.studied === 1 ? 1 : 0);
 }
 
-// -1 = no data, 0–3 = score
-const COLORS = [
-  'var(--c-empty)',
-  'var(--c-0)',
-  'var(--c-1)',
-  'var(--c-2)',
-  'var(--c-3)',
-];
-const scoreColor = s => (s === -1 ? COLORS[0] : COLORS[Math.min(s + 1, 4)]);
-
-function fmt(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  return `${WEEKDAYS_FULL[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
-}
+const COLORS = ['var(--c-empty)', 'var(--c-0)', 'var(--c-1)', 'var(--c-2)', 'var(--c-3)'];
+const scoreColor = s => s === -1 ? COLORS[0] : COLORS[Math.min(s + 1, 4)];
 
 function DayPreview({ date, data }) {
-  const labels = [
+  const d = new Date(date + 'T12:00:00');
+  const label = `${WEEKDAYS_FULL[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+  const items = [
     ['Office',   data.office],
     ['Work day', data.satisfied],
     ['Studied',  data.studied],
   ];
   return (
     <div className="chart-detail">
-      <p className="chart-detail-date">{fmt(date)}</p>
+      <p className="chart-detail-date">{label}</p>
       <div className="chart-detail-items">
-        {labels.map(([label, val]) => (
-          <span key={label} className={`cdi ${val === 1 ? 'cdi-yes' : val === 0 ? 'cdi-no' : 'cdi-un'}`}>
+        {items.map(([label, val]) => (
+          <span key={label} className={`cdi ${val === 1 ? 'cdi-yes' : val === 0 ? 'cdi-no' : ''}`}>
             {label} {val === 1 ? '✓' : val === 0 ? '✗' : '—'}
           </span>
         ))}
-        {data.pmo_count !== null && (
-          <span className="cdi">PMO {data.pmo_count}×</span>
-        )}
+        {data.pmo_count !== null && <span className="cdi">PMO {data.pmo_count}×</span>}
       </div>
     </div>
   );
@@ -81,17 +67,20 @@ function DayPreview({ date, data }) {
 
 export default function ContributionChart({ days }) {
   const [selected, setSelected] = useState(null);
-  const { cells, totalWeeks } = buildGrid();
-  const todayStr = toStr(new Date());
 
-  // Build month label per week-column
-  const monthLabels = {};
-  for (const { date, week, day } of cells) {
-    if (day === 0) {
-      const d = new Date(date + 'T12:00:00');
-      if (d.getDate() <= 7) monthLabels[week] = MONTHS_SHORT[d.getMonth()];
+  // Computed once per mount — grid only changes when the day changes
+  const { cells, totalWeeks, todayStr } = useMemo(buildGrid, []);
+
+  const monthLabels = useMemo(() => {
+    const labels = {};
+    for (const { date, week, day } of cells) {
+      if (day === 0) {
+        const d = new Date(date + 'T12:00:00');
+        if (d.getDate() <= 7) labels[week] = MONTHS_SHORT[d.getMonth()];
+      }
     }
-  }
+    return labels;
+  }, [cells]);
 
   function toggle(date) {
     setSelected(prev => prev === date ? null : date);
@@ -101,7 +90,6 @@ export default function ContributionChart({ days }) {
 
   return (
     <div className="chart-wrap">
-      {/* Month labels */}
       <div className="chart-months" style={{ gridTemplateColumns: `repeat(${totalWeeks}, 1fr)` }}>
         {Array.from({ length: totalWeeks }, (_, w) => (
           <span key={w} className="chart-month">{monthLabels[w] ?? ''}</span>
@@ -109,30 +97,25 @@ export default function ContributionChart({ days }) {
       </div>
 
       <div className="chart-body">
-        {/* Day-of-week labels */}
         <div className="chart-dow">
           {DOW_LABELS.map((l, i) => (
             <span key={i} className="chart-dow-lbl">{i % 2 === 0 ? l : ''}</span>
           ))}
         </div>
 
-        {/* Cell grid */}
+        {/* Plain buttons — CSS :active handles the tap feedback, no Framer per cell */}
         <div className="chart-cells" style={{ gridTemplateColumns: `repeat(${totalWeeks}, 1fr)` }}>
           {cells.map(({ date, week, day }) => {
-            const s = dayScore(days[date]);
             const isFuture = date > todayStr;
-            const isSelected = selected === date;
             return (
-              <motion.button
+              <button
                 key={date}
-                className={`chart-cell${isSelected ? ' chart-cell-sel' : ''}`}
+                className={`chart-cell${selected === date ? ' chart-cell-sel' : ''}`}
                 style={{
                   gridColumn: week + 1,
                   gridRow: day + 1,
-                  background: isFuture ? 'transparent' : scoreColor(s),
+                  background: isFuture ? 'transparent' : scoreColor(dayScore(days[date])),
                 }}
-                whileTap={{ scale: 0.65 }}
-                transition={{ type: 'spring', stiffness: 600, damping: 20 }}
                 onClick={() => !isFuture && toggle(date)}
                 aria-label={date}
               />

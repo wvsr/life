@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { initDB, loadAll, upsertDay, insertExpense, removeExpense } from './db.js';
 import TodayView from './components/TodayView.jsx';
@@ -23,6 +23,17 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [syncError, setSyncError] = useState(false);
 
+  // Keep a ref to expenses so updateDay can write it to cache without a stale closure
+  const expensesRef = useRef(expenses);
+  useEffect(() => { expensesRef.current = expenses; }, [expenses]);
+
+  // Auto-sync any state change to localStorage cache
+  useEffect(() => {
+    if (!loading) {
+      try { localStorage.setItem('life-cache', JSON.stringify({ days, expenses })); } catch {}
+    }
+  }, [days, expenses, loading]);
+
   useEffect(() => {
     // Show cached data immediately — zero latency on open
     try {
@@ -45,7 +56,6 @@ export default function App() {
         const data = await loadAll();
         setDays(data.days);
         setExpenses(data.expenses);
-        localStorage.setItem('life-cache', JSON.stringify(data));
       } catch (e) {
         console.error('sync failed', e);
         setSyncError(true);
