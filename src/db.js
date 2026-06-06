@@ -1,33 +1,30 @@
-// @libsql/client/web uses wss:// WebSocket under the hood — no CORS issues.
-// HTTP fetch approach fails because Turso's HTTP endpoint doesn't send CORS headers.
 import { createClient } from '@libsql/client/web';
 
 const client = createClient({
-  url:       import.meta.env.VITE_TURSO_URL,   // libsql:// → wss://
+  url:       import.meta.env.VITE_TURSO_URL,
   authToken: import.meta.env.VITE_TURSO_TOKEN,
 });
 
 export async function initDB() {
-  // args: [] must be explicit — the batch API calls Object.entries(args) and crashes on undefined
-  await client.batch([
-    { sql: `CREATE TABLE IF NOT EXISTS daily_logs (
-              date        TEXT PRIMARY KEY,
-              office      INTEGER,
-              satisfied   INTEGER,
-              studied     INTEGER,
-              pmo_count   INTEGER,
-              pmo_support INTEGER,
-              updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )`, args: [] },
-    { sql: `CREATE TABLE IF NOT EXISTS expenses (
-              id         INTEGER PRIMARY KEY AUTOINCREMENT,
-              date       TEXT NOT NULL,
-              amount     REAL NOT NULL,
-              note       TEXT NOT NULL DEFAULT '',
-              created_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )`, args: [] },
-    { sql: `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)`, args: [] },
-  ], 'write');
+  await client.execute(`CREATE TABLE IF NOT EXISTS daily_logs (
+    date        TEXT PRIMARY KEY,
+    office      INTEGER,
+    satisfied   INTEGER,
+    studied     INTEGER,
+    pmo_count   INTEGER,
+    pmo_support INTEGER,
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+  await client.execute(`CREATE TABLE IF NOT EXISTS expenses (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    date       TEXT NOT NULL,
+    amount     REAL NOT NULL,
+    note       TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+  await client.execute(
+    `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)`
+  );
 }
 
 export async function loadAll() {
