@@ -358,8 +358,8 @@ html, body, #root {
 .input:focus { border-color: #383838; }
 .input::placeholder { color: var(--muted); }
 
-.input-amount { width: 108px; }
-.input-note   { flex: 1; }
+.input-amount { flex: 0 0 88px; min-width: 0; }
+.input-note   { flex: 1; min-width: 0; }
 
 .icon-btn {
   width: 44px;
