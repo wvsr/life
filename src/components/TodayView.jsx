@@ -128,13 +128,60 @@ function evalAmount(str) {
   } catch { return NaN; }
 }
 
+const KEYPAD_ROWS = [
+  ['7', '8', '9', '⌫'],
+  ['4', '5', '6', '+'],
+  ['1', '2', '3', '-'],
+];
+
+function NumKeypad({ value, onChange, onNext }) {
+  function press(key) {
+    if (key === '⌫') { onChange(value.slice(0, -1)); return; }
+    if (key === '→') { onNext(); return; }
+    onChange(value + key);
+  }
+
+  return (
+    <div className="keypad">
+      {KEYPAD_ROWS.map((row, ri) => (
+        <div key={ri} className="keypad-row">
+          {row.map(k => (
+            <button
+              key={k}
+              className={`keypad-btn${k === '+' || k === '-' ? ' keypad-btn-op' : k === '⌫' ? ' keypad-btn-del' : ''}`}
+              onPointerDown={e => { e.preventDefault(); press(k); }}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
+      ))}
+      <div className="keypad-row">
+        <button className="keypad-btn keypad-btn-wide" onPointerDown={e => { e.preventDefault(); press('0'); }}>0</button>
+        <button className="keypad-btn" onPointerDown={e => { e.preventDefault(); press('.'); }}>.</button>
+        <button className="keypad-btn keypad-btn-next" onPointerDown={e => { e.preventDefault(); press('→'); }}>→</button>
+      </div>
+    </div>
+  );
+}
+
 function ExpenseSection({ expenses, onAdd, onDelete }) {
-  const [amount, setAmount] = useState('');
-  const [note, setNote]     = useState('');
-  const amountRef = useRef(null);
-  const noteRef   = useRef(null);
+  const [amount, setAmount]       = useState('');
+  const [note, setNote]           = useState('');
+  const [keypadOpen, setKeypadOpen] = useState(false);
+  const noteRef = useRef(null);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+  function openKeypad() {
+    noteRef.current?.blur();
+    setKeypadOpen(true);
+  }
+
+  function handleKeypadNext() {
+    setKeypadOpen(false);
+    noteRef.current?.focus();
+  }
 
   function submit() {
     const n = evalAmount(amount);
@@ -142,11 +189,8 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
     onAdd(n, note.trim());
     setAmount('');
     setNote('');
-    amountRef.current?.focus();
-  }
-
-  function handleAmountKey(e) {
-    if (e.key === 'Enter') noteRef.current?.focus();
+    noteRef.current?.blur();
+    setKeypadOpen(true);
   }
 
   function handleNoteKey(e) {
@@ -194,17 +238,15 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
       </div>
 
       <div className="exp-form">
-        <input
-          ref={amountRef}
-          className="input input-amount"
-          type="text"
-          inputMode="text"
-          placeholder="৳ amount"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          onKeyDown={handleAmountKey}
-          autoComplete="off"
-        />
+        <div
+          className={`input input-amount input-display${keypadOpen ? ' input-focused' : ''}`}
+          onClick={openKeypad}
+        >
+          {amount
+            ? <span>{amount}</span>
+            : <span className="input-placeholder">৳ amount</span>
+          }
+        </div>
         <input
           ref={noteRef}
           className="input input-note"
@@ -213,6 +255,7 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
           value={note}
           onChange={e => setNote(e.target.value)}
           onKeyDown={handleNoteKey}
+          onFocus={() => setKeypadOpen(false)}
           autoComplete="off"
         />
         <motion.button
@@ -224,6 +267,23 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
           +
         </motion.button>
       </div>
+
+      <AnimatePresence>
+        {keypadOpen && (
+          <>
+            <div className="keypad-backdrop" onClick={() => setKeypadOpen(false)} />
+            <motion.div
+              className="num-keypad"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+            >
+              <NumKeypad value={amount} onChange={setAmount} onNext={handleKeypadNext} />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

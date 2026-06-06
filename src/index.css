@@ -391,6 +391,81 @@ html, body, #root {
 }
 .icon-btn:active { background: var(--border2); }
 
+.input-display {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.input-display:active { opacity: 0.7; }
+.input-focused { border-color: #383838; }
+.input-placeholder { color: var(--muted); }
+
+/* ─── Custom numpad ───────────────────────────────────────────────────────── */
+
+.keypad-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.num-keypad {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #181818;
+  border-top: 1px solid var(--border2);
+  padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+}
+
+.keypad {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.keypad-row {
+  display: flex;
+  gap: 8px;
+}
+
+.keypad-btn {
+  flex: 1;
+  height: 54px;
+  border-radius: 11px;
+  background: #252525;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 400;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.08s;
+}
+
+.keypad-btn:active { background: #383838; }
+
+.keypad-btn-op {
+  color: var(--green);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.keypad-btn-del { color: var(--muted); }
+
+.keypad-btn-wide { flex: 2; }
+
+.keypad-btn-next {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--green);
+  font-size: 18px;
+}
+.keypad-btn-next:active { background: rgba(34, 197, 94, 0.2); }
+
 /* ─── Contribution chart ─────────────────────────────────────────────────── */
 
 .chart-wrap {
