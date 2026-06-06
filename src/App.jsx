@@ -24,20 +24,36 @@ export default function App() {
   const [syncError, setSyncError] = useState(false);
 
   useEffect(() => {
-    async function boot() {
+    // Show cached data immediately — zero latency on open
+    try {
+      const cached = localStorage.getItem('life-cache');
+      if (cached) {
+        const { days, expenses } = JSON.parse(cached);
+        setDays(days);
+        setExpenses(expenses);
+        setLoading(false);
+      }
+    } catch {}
+
+    async function sync() {
       try {
-        await initDB();
+        // initDB only runs once ever (tables don't change)
+        if (!localStorage.getItem('db-ready')) {
+          await initDB();
+          localStorage.setItem('db-ready', '1');
+        }
         const data = await loadAll();
         setDays(data.days);
         setExpenses(data.expenses);
+        localStorage.setItem('life-cache', JSON.stringify(data));
       } catch (e) {
-        console.error('DB init failed', e);
+        console.error('sync failed', e);
         setSyncError(true);
       } finally {
         setLoading(false);
       }
     }
-    boot();
+    sync();
   }, []);
 
   const updateDay = useCallback((date, patch) => {
