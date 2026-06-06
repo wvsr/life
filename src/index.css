@@ -5,8 +5,18 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
   border: none;
   outline: none;
+}
+
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
 }
 
 button { cursor: pointer; font-family: inherit; background: none; }
@@ -44,6 +54,7 @@ html, body, #root {
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 .app {
@@ -56,6 +67,8 @@ html, body, #root {
   inset: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
 }
 
 .view {

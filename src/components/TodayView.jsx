@@ -198,7 +198,7 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
           ref={amountRef}
           className="input input-amount"
           type="text"
-          inputMode="decimal"
+          inputMode="text"
           placeholder="৳ amount"
           value={amount}
           onChange={e => setAmount(e.target.value)}
