@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -165,13 +165,32 @@ function NumKeypad({ value, onChange, onNext }) {
   );
 }
 
+const KEYPAD_H = 300;
+
 function ExpenseSection({ expenses, onAdd, onDelete }) {
   const [amount, setAmount]       = useState('');
   const [note, setNote]           = useState('');
   const [keypadOpen, setKeypadOpen] = useState(false);
   const noteRef = useRef(null);
+  const formRef = useRef(null);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
+
+  useEffect(() => {
+    const page = document.querySelector('.page');
+    if (!page) return;
+    if (keypadOpen) {
+      page.style.paddingBottom = KEYPAD_H + 'px';
+      requestAnimationFrame(() => {
+        const form = formRef.current;
+        if (!form) return;
+        const hidden = form.getBoundingClientRect().bottom - (window.innerHeight - KEYPAD_H) + 12;
+        if (hidden > 0) page.scrollBy({ top: hidden, behavior: 'smooth' });
+      });
+    } else {
+      page.style.paddingBottom = '';
+    }
+  }, [keypadOpen]);
 
   function openKeypad() {
     noteRef.current?.blur();
@@ -237,7 +256,7 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
         </AnimatePresence>
       </div>
 
-      <div className="exp-form">
+      <div className="exp-form" ref={formRef}>
         <div
           className={`input input-amount input-display${keypadOpen ? ' input-focused' : ''}`}
           onClick={openKeypad}
