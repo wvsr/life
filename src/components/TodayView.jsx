@@ -118,19 +118,31 @@ function PmoSection({ pmoCount, pmoSupport, onUpdate }) {
   );
 }
 
+function evalAmount(str) {
+  const s = str.trim().replace(/[^0-9+\-*/.() ]/g, '');
+  if (!s) return NaN;
+  try {
+    // eslint-disable-next-line no-new-func
+    const result = Function('"use strict"; return (' + s + ')')();
+    return typeof result === 'number' && isFinite(result) ? result : NaN;
+  } catch { return NaN; }
+}
+
 function ExpenseSection({ expenses, onAdd, onDelete }) {
   const [amount, setAmount] = useState('');
   const [note, setNote]     = useState('');
-  const noteRef = useRef(null);
+  const amountRef = useRef(null);
+  const noteRef   = useRef(null);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
 
   function submit() {
-    const n = parseFloat(amount);
+    const n = evalAmount(amount);
     if (isNaN(n) || n <= 0) return;
     onAdd(n, note.trim());
     setAmount('');
     setNote('');
+    amountRef.current?.focus();
   }
 
   function handleAmountKey(e) {
@@ -183,6 +195,7 @@ function ExpenseSection({ expenses, onAdd, onDelete }) {
 
       <div className="exp-form">
         <input
+          ref={amountRef}
           className="input input-amount"
           type="text"
           inputMode="decimal"

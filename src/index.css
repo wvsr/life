@@ -350,7 +350,7 @@ html, body, #root {
   border-radius: 12px;
   color: var(--text);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 16px; /* 16px prevents iOS Safari auto-zoom on focus */
   padding: 0 14px;
   height: 44px;
   transition: border-color 0.15s;
