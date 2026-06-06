@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/life/',
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +16,7 @@ export default defineConfig({
         background_color: '#0d0d0d',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/life/',
-        scope: '/life/',
+        start_url: '/',
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html}'],
